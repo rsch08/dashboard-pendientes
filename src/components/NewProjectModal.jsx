@@ -4,7 +4,8 @@ const COLORES = ['#6366f1', '#ec4899', '#10b981', '#f59e0b', '#0ea5e9', '#8b5cf6
 
 export default function NewProjectModal({ onClose, onCreate }) {
   const [name, setName] = useState('')
-  const [priority, setPriority] = useState('media')
+  const [fecha, setFecha] = useState('')
+  const [fechaLimite, setFechaLimite] = useState(false)
   const [color, setColor] = useState(COLORES[0])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
@@ -15,7 +16,7 @@ export default function NewProjectModal({ onClose, onCreate }) {
     setSaving(true)
     setError(null)
     try {
-      await onCreate({ name: name.trim(), priority, color })
+      await onCreate({ name: name.trim(), color, fecha, fechaLimite })
       onClose()
     } catch (err) {
       setError(err.message)
@@ -41,16 +42,17 @@ export default function NewProjectModal({ onClose, onCreate }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-600 mb-1">Prioridad</label>
-            <select
+            <label className="block text-sm font-medium text-slate-600 mb-1">¿Para cuándo? (opcional)</label>
+            <input
+              type="date"
               className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
-              value={priority}
-              onChange={(e) => setPriority(e.target.value)}
-            >
-              <option value="alta">Alta</option>
-              <option value="media">Media</option>
-              <option value="baja">Baja</option>
-            </select>
+              value={fecha}
+              onChange={(e) => setFecha(e.target.value)}
+            />
+            <label className="flex items-center gap-2 mt-2 text-sm text-slate-600">
+              <input type="checkbox" checked={fechaLimite} onChange={(e) => setFechaLimite(e.target.checked)} />
+              Es fecha límite (no se puede mover)
+            </label>
           </div>
 
           <div>
