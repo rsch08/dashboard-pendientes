@@ -6,7 +6,7 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 import { usePendientes } from './PendientesContext.jsx'
 import { ops } from './datos.js'
-import { abrirPip, cerrarPip } from './pip.js'
+import { abrirPip, cerrarPip, estadoReproduccion } from './pip.js'
 
 export const MIN = { enfoque: 25, descanso: 5 }
 const CLAVE = 'pendientes-casta.timer'
@@ -62,6 +62,7 @@ function avisar(modoTerminado) {
 export function TimerProvider({ children }) {
   const { datos, estado: estadoDrive, mutar } = usePendientes()
   const pipRef = useRef(null)
+  const alternarRef = useRef(() => {})
   const [t, setT] = useState(() => leer(CLAVE, INICIAL))
   const [ahora, setAhora] = useState(Date.now())
   const terminando = useRef(false)
@@ -123,7 +124,10 @@ export function TimerProvider({ children }) {
   const api = {
     ...t,
     restanteMs,
-    flotante: () => (document.pictureInPictureElement ? cerrarPip() : abrirPip(() => pipRef.current)),
+    flotante: () =>
+      document.pictureInPictureElement
+        ? cerrarPip()
+        : abrirPip(() => pipRef.current, { alternar: () => alternarRef.current() }),
     elegirTarea: (tarea) => guardar((p) => ({ ...p, tarea })),
     iniciar: () => {
       if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
@@ -135,6 +139,12 @@ export function TimerProvider({ children }) {
     reiniciar: () => guardar((p) => ({ ...p, corriendo: false, finEn: null, restante: MIN[p.modo] * 60000 })),
     cambiarModo: (modo) => guardar((p) => ({ ...p, modo, corriendo: false, finEn: null, restante: MIN[modo] * 60000 })),
   }
+
+  alternarRef.current = () => (t.corriendo ? api.pausar() : api.iniciar())
+
+  useEffect(() => {
+    if (document.pictureInPictureElement) estadoReproduccion(t.corriendo)
+  }, [t.corriendo])
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>
 }

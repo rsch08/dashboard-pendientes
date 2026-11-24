@@ -5,6 +5,33 @@
 let video = null
 let canvas = null
 let intervalo = null
+let controles = { alternar: () => {} }
+
+// El botón central de la ventana flotante (play/pausa) controla el timer.
+// Con Media Session el navegador manda el toque aquí en vez de pausar el video,
+// así la imagen sigue actualizándose.
+function prepararControles() {
+  const ms = navigator.mediaSession
+  if (!ms) return
+  try {
+    ms.metadata = new window.MediaMetadata({ title: 'Pomodoro', artist: 'Pendientes' })
+  } catch {
+    // sin MediaMetadata
+  }
+  const alternar = () => controles.alternar()
+  for (const accion of ['play', 'pause']) {
+    try {
+      ms.setActionHandler(accion, alternar)
+    } catch {
+      // acción no soportada
+    }
+  }
+}
+
+// Muestra el ícono correcto (▶ si está en pausa, ❚❚ si corre).
+export function estadoReproduccion(corriendo) {
+  if (navigator.mediaSession) navigator.mediaSession.playbackState = corriendo ? 'playing' : 'paused'
+}
 
 export const pipDisponible = () =>
   typeof document !== 'undefined' &&
@@ -42,7 +69,8 @@ function dibujar(estado) {
   }
 }
 
-export async function abrirPip(estado) {
+export async function abrirPip(estado, { alternar } = {}) {
+  if (alternar) controles = { alternar }
   if (!canvas) {
     canvas = document.createElement('canvas')
     canvas.width = 480
@@ -54,6 +82,12 @@ export async function abrirPip(estado) {
     video.playsInline = true
     video.style.cssText = 'position:fixed;bottom:0;left:0;width:2px;height:1px;opacity:0;pointer-events:none'
     document.body.appendChild(video)
+    // Si el navegador pausa el video de todos modos, lo toma como toque y lo reanuda.
+    video.addEventListener('pause', () => {
+      if (!document.pictureInPictureElement) return
+      controles.alternar()
+      video.play().catch(() => {})
+    })
     video.addEventListener('leavepictureinpicture', () => {
       clearInterval(intervalo)
       intervalo = null
@@ -62,6 +96,8 @@ export async function abrirPip(estado) {
   dibujar(estado)
   if (!video.srcObject) video.srcObject = canvas.captureStream(4)
   await video.play()
+  prepararControles()
+  estadoReproduccion(estado().corriendo)
   clearInterval(intervalo)
   intervalo = setInterval(() => dibujar(estado), 500)
   await video.requestPictureInPicture()
