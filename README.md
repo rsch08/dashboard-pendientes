@@ -72,7 +72,16 @@ Framework preset **Vite**. No requiere variables de entorno.
 
 La tarjeta de cada proyecto hereda el peor nivel entre sus tareas no terminadas.
 
-## Trocear tareas grandes
+## Estructura y vistas (esquema 2, nov 2026)
 
-Al crear una tarea puedes marcarla como "es grande" y partirla en subtareas
-ahí mismo (una por línea).
+- **Proyecto** = algo concreto con final ("Boda de Axel", "Cambiar foco del baño").
+  Nada de agrupar por temas. **Tarea** = un paso del proyecto. **Subtareas** =
+  checklist opcional de la tarea. El modelo completo está en `src/lib/datos.js`.
+- **Hoy**: un renglón por proyecto con su siguiente tarea (y su siguiente
+  subtarea). Al tocarlo se expande con todo.
+- **Tablero**: tarjetas de TAREAS de todos los proyectos en Backlog / En
+  progreso / Hecho. Se mueven solas: con subtareas, ninguna marcada → Backlog,
+  alguna → En progreso, todas → Hecho; sin subtareas, marcarla → Hecho.
+- Lo que Claude propone lleva `"sugerida": true` y se ve con una etiqueta
+  amarilla: tocarla la confirma; ✕ la borra.
+- Idea futura: arrastrar tarjetas (drag and drop).

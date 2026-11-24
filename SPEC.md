@@ -1,5 +1,7 @@
 # Dashboard de Proyectos Personales — Spec v1
 
+> Nota (nov 2026): la estructura cambió a Proyecto concreto > Tarea > Subtarea, con vista "Hoy" y un tablero de tareas automático. Ver README, sección "Estructura y vistas". Lo de abajo es el spec original.
+
 ## Problema que resuelve
 Casta maneja 4-6 proyectos personales activos (finanzas, conferencista, depa, coche, IMSS mamá, etc.) con estructura jerárquica variable (algunos son tareas simples, otros tienen subproyectos con sub-tareas). Las to-do lists planas no permiten priorizar ni dar seguimiento a qué se ha estancado. Con TDAH, las tareas grandes abruman y se pierden de vista.
 

@@ -22,7 +22,7 @@ export default function BarraSync() {
 
   return (
     <div
-      className={`sticky top-0 z-40 px-4 py-2 text-xs flex items-center gap-2 border-b ${
+      className={`px-4 py-2 text-xs flex items-center gap-2 border-b ${
         estado === 'error' ? 'bg-red-50 border-red-200 text-red-700' : 'bg-white/90 backdrop-blur border-slate-200 text-slate-500'
       }`}
     >

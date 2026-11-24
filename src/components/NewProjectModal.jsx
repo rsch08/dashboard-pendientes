@@ -36,7 +36,7 @@ export default function NewProjectModal({ onClose, onCreate }) {
               className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Ej. Finanzas"
+              placeholder="Ej. Boda de Axel"
             />
           </div>
 
