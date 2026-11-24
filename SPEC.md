@@ -5,9 +5,9 @@ Casta maneja 4-6 proyectos personales activos (finanzas, conferencista, depa, co
 
 ## Stack sugerido
 - **Frontend**: React + Vite + Tailwind
-- **Backend/DB**: Supabase (Postgres + auth, free tier) — necesario porque es código real desplegado, no un artifact con storage nativo
+- **Datos**: un archivo `pendientes.json` en Google Drive (ver README). Al inicio se usó una base de datos; se cambió a Drive en noviembre 2026 para que Claude pueda leer y editar los pendientes.
 - **Deploy**: Vercel (link accesible desde el navegador del celular)
-- **Auth**: simple, un solo usuario (login básico o incluso sin auth si el link no es público)
+- **Auth**: inicio de sesión con Google (solo Client ID público), un solo usuario
 
 ## Modelo de datos (MVP)
 ```
