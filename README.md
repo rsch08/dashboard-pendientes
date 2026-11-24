@@ -44,15 +44,15 @@ npm install
 npm run dev
 ```
 
-Por defecto usa el Client ID de OAuth de la app de finanzas (`src/lib/config.js`);
-se puede cambiar con `VITE_GOOGLE_CLIENT_ID`.
+Usa el Client ID de OAuth del proyecto de Google Cloud "dashboard pendientes"
+(`src/lib/config.js`); se puede cambiar con `VITE_GOOGLE_CLIENT_ID`.
 
 ### Google Cloud (una sola vez)
 
 En el proyecto de Google Cloud del Client ID:
 
-1. **Credenciales → Client ID → Orígenes de JavaScript autorizados**: agregar el
-   dominio de Vercel de esta app (y `http://localhost:5173` para desarrollo).
+1. **Clientes → Pendientes web → Orígenes de JavaScript autorizados**:
+   `https://pendientes-casta.vercel.app` (y `http://localhost:5173` para desarrollo).
 2. La app pide el scope `drive` completo (necesario para editar un archivo que
    creó Claude). Como la app está en modo de prueba, Google muestra el aviso de
    "app no verificada": es esperado, continuar.
