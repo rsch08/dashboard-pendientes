@@ -1,16 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
-import { estadoTarea, ops, siguienteSubtarea, siguienteTarea } from '../lib/datos.js'
-import { claseNivel, nivelOxidadoProyecto } from '../utils/oxidado.js'
+import { avanceProyecto, ops, siguienteSubtarea, siguienteTarea } from '../lib/datos.js'
+import { avisosProyecto } from '../utils/fechas.js'
+import Aviso, { Barra } from './Aviso.jsx'
 import TareaItem from './TareaItem.jsx'
 
-export default function ProyectoItem({ project, abierto, onAlternar, puedeEditar, accion }) {
+export default function ProyectoItem({ project, abierto, tareaInicial, onAlternar, puedeEditar, accion }) {
   const ref = useRef(null)
   const [nuevaTarea, setNuevaTarea] = useState('')
-  const total = project.tasks.length
-  const hechas = project.tasks.filter((t) => estadoTarea(t) === 'hecho').length
+  const [tareaAbierta, setTareaAbierta] = useState(tareaInicial)
   const sig = siguienteTarea(project)
   const sigSub = sig && siguienteSubtarea(sig)
-  const nivel = nivelOxidadoProyecto(project.tasks)
+  const avisos = avisosProyecto(project)
+
+  useEffect(() => {
+    if (tareaInicial) setTareaAbierta(tareaInicial)
+  }, [tareaInicial])
 
   // Si llegó desde el tablero, lo trae a la vista.
   useEffect(() => {
@@ -29,33 +33,43 @@ export default function ProyectoItem({ project, abierto, onAlternar, puedeEditar
   }
 
   return (
-    <div ref={ref} className={`rounded-xl border-2 shadow-sm ${claseNivel(nivel)}`}>
+    <div ref={ref} className="rounded-xl border border-slate-200 bg-white shadow-sm">
       <button onClick={onAlternar} className="w-full text-left p-3 flex items-start gap-3">
         <span className="w-3 h-3 mt-1.5 rounded-full shrink-0" style={{ backgroundColor: project.color }} />
         <span className="flex-1 min-w-0">
-          <span className="flex items-baseline justify-between gap-2">
-            <span className="font-semibold text-slate-800">{project.name}</span>
-            <span className="text-xs text-slate-400 shrink-0">
-              {hechas}/{total}
-            </span>
-          </span>
-          {!abierto && sig && (
+          <span className="block font-semibold text-slate-800">{project.name}</span>
+          {sig && (
             <span className="block text-sm text-slate-600 mt-0.5">
               → {sig.title}
               {sigSub && <span className="text-slate-400"> · {sigSub.title}</span>}
             </span>
           )}
-          {!abierto && !sig && total === 0 && (
-            <span className="block text-sm text-slate-400 mt-0.5">Sin tareas todavía</span>
+          {project.tasks.length === 0 && <span className="block text-sm text-slate-400 mt-0.5">Sin tareas todavía</span>}
+          {avisos.length > 0 && (
+            <span className="flex flex-wrap gap-1 mt-1.5">
+              {avisos.map((a) => (
+                <Aviso key={a.texto} aviso={a} />
+              ))}
+            </span>
           )}
+          {avanceProyecto(project) > 0 && <Barra valor={avanceProyecto(project)} className="mt-2" />}
         </span>
         <span className="text-slate-400 text-sm mt-0.5">{abierto ? '▾' : '▸'}</span>
       </button>
 
       {abierto && (
-        <div className="px-3 pb-3 space-y-2">
+        <div className="px-3 pb-3 space-y-1.5">
           {project.tasks.map((t) => (
-            <TareaItem key={t.id} projectId={project.id} task={t} puedeEditar={puedeEditar} accion={accion} />
+            <TareaItem
+              key={t.id}
+              projectId={project.id}
+              task={t}
+              esSiguiente={sig?.id === t.id}
+              abierta={tareaAbierta === t.id}
+              onAlternar={() => setTareaAbierta((x) => (x === t.id ? null : t.id))}
+              puedeEditar={puedeEditar}
+              accion={accion}
+            />
           ))}
 
           {puedeEditar && (
@@ -75,8 +89,23 @@ export default function ProyectoItem({ project, abierto, onAlternar, puedeEditar
                   +
                 </button>
               </form>
-              <div className="text-right">
-                <button onClick={borrarProyecto} className="text-xs text-slate-400 hover:text-red-600">
+              <div className="flex flex-wrap items-center gap-2 pt-2 text-xs text-slate-500">
+                <span>¿Para cuándo?</span>
+                <input
+                  type="date"
+                  value={project.fecha ?? ''}
+                  onChange={(e) => accion(ops.editarProyecto(project.id, { fecha: e.target.value || null }))}
+                  className="border border-slate-300 rounded-md px-1.5 py-0.5"
+                />
+                <label className="flex items-center gap-1">
+                  <input
+                    type="checkbox"
+                    checked={!!project.fecha_limite}
+                    onChange={(e) => accion(ops.editarProyecto(project.id, { fecha_limite: e.target.checked }))}
+                  />
+                  es fecha límite
+                </label>
+                <button onClick={borrarProyecto} className="ml-auto text-slate-400 hover:text-red-600">
                   Borrar proyecto
                 </button>
               </div>

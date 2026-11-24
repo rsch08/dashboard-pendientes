@@ -1,21 +1,23 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { usePendientes } from '../lib/PendientesContext.jsx'
-import { ops, porPrioridad, proyectoTerminado } from '../lib/datos.js'
+import { ops, ordenProyectos, proyectoTerminado } from '../lib/datos.js'
 import ProyectoItem from '../components/ProyectoItem.jsx'
 import NewProjectModal from '../components/NewProjectModal.jsx'
 
-// Vista principal: un renglón por proyecto con su siguiente paso.
-// Al tocarlo se expande con todas sus tareas y subtareas.
-export default function Hoy() {
+// Un renglón por proyecto con su siguiente paso, ordenados por fecha (lo más
+// próximo arriba; sin fecha, lo más estancado arriba). Al tocar un proyecto se
+// expande con sus tareas; al tocar una tarea, con sus subtareas.
+export default function Proyectos() {
   const { datos, estado, mutar } = usePendientes()
   const [params, setParams] = useSearchParams()
   const [showModal, setShowModal] = useState(false)
   const [verTerminados, setVerTerminados] = useState(false)
   const abierto = params.get('p')
+  const tareaAbierta = params.get('t')
   const puedeEditar = estado === 'listo' || estado === 'guardando'
 
-  const todos = [...(datos?.projects ?? [])].sort(porPrioridad)
+  const todos = [...(datos?.projects ?? [])].sort(ordenProyectos)
   const activos = todos.filter((p) => !proyectoTerminado(p))
   const terminados = todos.filter(proyectoTerminado)
 
@@ -27,6 +29,7 @@ export default function Hoy() {
       key={p.id}
       project={p}
       abierto={abierto === p.id}
+      tareaInicial={abierto === p.id ? tareaAbierta : null}
       onAlternar={() => alternar(p.id)}
       puedeEditar={puedeEditar}
       accion={accion}

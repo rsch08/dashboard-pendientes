@@ -9,11 +9,14 @@
 //   "updated_at": "ISO",
 //   "updated_by": "app" | "claude",
 //   "projects": [{
-//     "id", "name", "priority": "alta|media|baja", "color", "created_at",
+//     "id", "name", "color", "created_at",
+//     "fecha": "AAAA-MM-DD" | null,   // para cuándo espero resolverlo (ordena la lista)
+//     "fecha_limite": false,          // true = deadline duro, no se puede mover
 //     "tasks": [{                  // el orden del arreglo es el orden de los pasos
 //       "id", "title", "due_date": "AAAA-MM-DD" | null,
 //       "done": false,             // solo cuenta si la tarea NO tiene subtareas
 //       "sugerida": true,          // opcional: la propuso Claude, Casta la confirma o borra
+//       "pomodoros": [{ "at": "ISO", "min": 25 }],  // tiempo dedicado con el timer
 //       "last_moved_at", "created_at",
 //       "subtasks": [{ "id", "title", "done": false, "sugerida"?: true }]
 //     }]
@@ -74,10 +77,25 @@ const sinSugerida = (obj) => {
 }
 
 export const ops = {
-  crearProyecto: ({ name, priority, color }) => (d) => ({
+  crearProyecto: ({ name, color, fecha, fechaLimite }) => (d) => ({
     ...d,
-    projects: [...d.projects, { id: nuevoId(), name, priority, color, created_at: ahora(), tasks: [] }],
+    projects: [
+      ...d.projects,
+      { id: nuevoId(), name, color, fecha: fecha || null, fecha_limite: !!fechaLimite, created_at: ahora(), tasks: [] },
+    ],
   }),
+
+  // campos: { fecha, fecha_limite, name }
+  editarProyecto: (projectId, campos) => (d) => conProyecto(d, projectId, (p) => ({ ...p, ...campos })),
+
+  // campos: { due_date, title }
+  editarTarea: (projectId, taskId, campos) => (d) => conTarea(d, projectId, taskId, (t) => ({ ...t, ...campos })),
+
+  // Un pomodoro terminado cuenta como movimiento (quita lo oxidado).
+  registrarPomodoro: (projectId, taskId, min) => (d) =>
+    conTarea(d, projectId, taskId, (t) => ({ ...t, pomodoros: [...(t.pomodoros ?? []), { at: ahora(), min }] }), {
+      tocar: true,
+    }),
 
   borrarProyecto: (projectId) => (d) => ({ ...d, projects: d.projects.filter((p) => p.id !== projectId) }),
 
@@ -133,10 +151,42 @@ export const ops = {
     ),
 }
 
-const ORDEN_PRIORIDAD = { alta: 0, media: 1, baja: 2 }
-export const porPrioridad = (a, b) =>
-  (ORDEN_PRIORIDAD[a.priority] ?? 9) - (ORDEN_PRIORIDAD[b.priority] ?? 9) ||
-  String(a.created_at).localeCompare(String(b.created_at))
+// Avance de 0 a 1: cada tarea pesa igual; las que tienen subtareas cuentan su fracción.
+export function avanceTarea(t) {
+  const subs = t.subtasks ?? []
+  if (subs.length === 0) return t.done ? 1 : 0
+  return subs.filter((s) => s.done).length / subs.length
+}
+export const avanceProyecto = (p) =>
+  p.tasks.length === 0 ? 0 : p.tasks.reduce((a, t) => a + avanceTarea(t), 0) / p.tasks.length
+
+export const minutosTarea = (t) => (t.pomodoros ?? []).reduce((a, x) => a + (x.min || 0), 0)
+
+// Fecha que manda para ordenar: la del proyecto o, si no tiene, la fecha más
+// próxima de sus tareas pendientes.
+export function fechaEfectiva(p) {
+  if (p.fecha) return p.fecha
+  const fechas = p.tasks
+    .filter((t) => estadoTarea(t) !== 'hecho' && t.due_date)
+    .map((t) => t.due_date)
+    .sort()
+  return fechas[0] ?? null
+}
+
+// Orden de la lista: primero lo que tiene fecha (más próxima arriba); luego lo
+// que no tiene fecha, con lo más estancado arriba.
+export function ordenProyectos(a, b) {
+  const fa = fechaEfectiva(a)
+  const fb = fechaEfectiva(b)
+  if (fa && fb) return fa.localeCompare(fb) || Number(!!b.fecha_limite) - Number(!!a.fecha_limite)
+  if (fa) return -1
+  if (fb) return 1
+  return masViejo(a).localeCompare(masViejo(b))
+}
+function masViejo(p) {
+  const activas = p.tasks.filter((t) => estadoTarea(t) !== 'hecho').map((t) => t.last_moved_at)
+  return activas.sort()[0] ?? '9999'
+}
 
 // Tolera archivos editados a mano y copias viejas (esquema 1, con "status").
 export function normalizar(datos) {
@@ -145,9 +195,11 @@ export function normalizar(datos) {
     version: Number(datos?.version) || 0,
     updated_at: datos?.updated_at ?? null,
     updated_by: datos?.updated_by ?? null,
-    projects: (datos?.projects ?? []).map((p) => ({
-      priority: 'media',
+    // eslint-disable-next-line no-unused-vars
+    projects: (datos?.projects ?? []).map(({ priority, ...p }) => ({
       color: '#6366f1',
+      fecha: null,
+      fecha_limite: false,
       ...p,
       // eslint-disable-next-line no-unused-vars
       tasks: (p.tasks ?? []).map(({ status, priority, ...t }) => ({
@@ -156,6 +208,7 @@ export function normalizar(datos) {
         done: t.done ?? status === 'hecho',
         last_moved_at: t.last_moved_at ?? t.created_at ?? new Date().toISOString(),
         subtasks: t.subtasks ?? [],
+        pomodoros: t.pomodoros ?? [],
       })),
     })),
   }

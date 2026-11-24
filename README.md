@@ -75,13 +75,21 @@ La tarjeta de cada proyecto hereda el peor nivel entre sus tareas no terminadas.
 ## Estructura y vistas (esquema 2, nov 2026)
 
 - **Proyecto** = algo concreto con final ("Boda de Axel", "Cambiar foco del baño").
-  Nada de agrupar por temas. **Tarea** = un paso del proyecto. **Subtareas** =
-  checklist opcional de la tarea. El modelo completo está en `src/lib/datos.js`.
-- **Hoy**: un renglón por proyecto con su siguiente tarea (y su siguiente
-  subtarea). Al tocarlo se expande con todo.
-- **Tablero**: tarjetas de TAREAS de todos los proyectos en Backlog / En
-  progreso / Hecho. Se mueven solas: con subtareas, ninguna marcada → Backlog,
-  alguna → En progreso, todas → Hecho; sin subtareas, marcarla → Hecho.
+  Nada de agrupar por temas ni prioridades. Tiene una fecha opcional "¿para
+  cuándo?" que puede ser meta (flexible) o límite (deadline). **Tarea** = un paso
+  del proyecto (con fecha límite opcional). **Subtareas** = checklist opcional.
+  El modelo completo está en `src/lib/datos.js`.
+- Menú de abajo con tres vistas:
+  - **Timer** (inicio): Pomodoro 25/5 sobre la tarea elegida. Cada pomodoro
+    terminado se guarda en la tarea (`pomodoros`) y quita lo oxidado. Botón de
+    ventana flotante (picture-in-picture).
+  - **Proyectos**: un renglón por proyecto con su siguiente paso y avisos
+    (fecha próxima/vencida, estancado). Orden: fecha más próxima arriba; sin
+    fecha, lo más estancado arriba. Tocar proyecto → tareas; tocar tarea →
+    subtareas.
+  - **Tablero**: tarjetas de TAREAS en Backlog / En progreso / Hecho. Se mueven
+    solas: con subtareas, ninguna marcada → Backlog, alguna → En progreso,
+    todas → Hecho; sin subtareas, marcarla → Hecho.
 - Lo que Claude propone lleva `"sugerida": true` y se ve con una etiqueta
   amarilla: tocarla la confirma; ✕ la borra.
 - Idea futura: arrastrar tarjetas (drag and drop).
