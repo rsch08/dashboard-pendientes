@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-export default function TrocearModal({ task, onClose, onAddSubtask }) {
+export default function TrocearModal({ task, onClose, onSave }) {
   const [lineas, setLineas] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -15,11 +15,12 @@ export default function TrocearModal({ task, onClose, onAddSubtask }) {
       return
     }
     setSaving(true)
-    for (const titulo of titulos) {
-      await onAddSubtask(task.id, titulo)
+    try {
+      await onSave(titulos)
+      onClose()
+    } catch {
+      setSaving(false)
     }
-    setSaving(false)
-    onClose()
   }
 
   return (

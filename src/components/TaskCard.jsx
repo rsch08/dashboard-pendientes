@@ -14,14 +14,15 @@ const ETIQUETA_ESTADO = {
   hecho: 'Hecho',
 }
 
-export default function TaskCard({ task, subtasks, onUpdateStatus, onDelete, onAddSubtask }) {
+export default function TaskCard({ task, onUpdateStatus, onDelete, onAddSubtask, onToggleSubtask, onDeleteSubtask }) {
+  const subtasks = task.subtasks ?? []
   const [showSubtaskForm, setShowSubtaskForm] = useState(false)
   const [subtaskTitle, setSubtaskTitle] = useState('')
 
   const clases = task.status === 'hecho' ? 'bg-white border-slate-200' : claseOxidado(task.last_moved_at)
   const etiquetaOxi = task.status === 'hecho' ? null : etiquetaOxidado(task.last_moved_at)
 
-  const subtareasHechas = subtasks.filter((s) => s.status === 'hecho').length
+  const subtareasHechas = subtasks.filter((s) => s.done).length
 
   async function handleAddSubtask(e) {
     e.preventDefault()
@@ -36,7 +37,7 @@ export default function TaskCard({ task, subtasks, onUpdateStatus, onDelete, onA
       <div className="flex items-start justify-between gap-2">
         <p className="text-sm font-medium text-slate-800">{task.title}</p>
         <button
-          onClick={() => onDelete(task.id)}
+          onClick={() => window.confirm(`¿Borrar "${task.title}"?`) && onDelete(task.id)}
           className="text-slate-300 hover:text-red-500 text-xs shrink-0"
           title="Eliminar tarea"
         >
@@ -56,7 +57,7 @@ export default function TaskCard({ task, subtasks, onUpdateStatus, onDelete, onA
 
       <button
         onClick={() => onUpdateStatus(task.id, SIGUIENTE_ESTADO[task.status])}
-        className="mt-2 text-xs px-2 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700"
+        className="mt-2 text-xs px-3 py-1.5 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700"
       >
         Mover a: {ETIQUETA_ESTADO[SIGUIENTE_ESTADO[task.status]]}
       </button>
@@ -69,16 +70,15 @@ export default function TaskCard({ task, subtasks, onUpdateStatus, onDelete, onA
           {subtasks.map((sub) => (
             <div key={sub.id} className="flex items-center justify-between gap-2">
               <button
-                onClick={() => onUpdateStatus(sub.id, SIGUIENTE_ESTADO[sub.status])}
-                className={`text-xs text-left flex-1 truncate ${
-                  sub.status === 'hecho' ? 'line-through text-slate-400' : 'text-slate-700'
+                onClick={() => onToggleSubtask(task.id, sub.id)}
+                className={`text-sm text-left flex-1 py-1 ${
+                  sub.done ? 'line-through text-slate-400' : 'text-slate-700'
                 }`}
-                title={ETIQUETA_ESTADO[sub.status]}
               >
-                {sub.status === 'hecho' ? '☑' : '☐'} {sub.title}
+                {sub.done ? '☑' : '☐'} {sub.title}
               </button>
               <button
-                onClick={() => onDelete(sub.id)}
+                onClick={() => onDeleteSubtask(task.id, sub.id)}
                 className="text-slate-300 hover:text-red-500 text-xs shrink-0"
               >
                 ✕
@@ -105,7 +105,7 @@ export default function TaskCard({ task, subtasks, onUpdateStatus, onDelete, onA
       ) : (
         <button
           onClick={() => setShowSubtaskForm(true)}
-          className="mt-2 text-xs text-indigo-600 hover:underline"
+          className="mt-2 block text-xs text-indigo-600 hover:underline"
         >
           + subtarea
         </button>

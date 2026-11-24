@@ -1,97 +1,78 @@
-# Dashboard de Proyectos Personales
+# Pendientes (dashboard)
 
-MVP para dar seguimiento a proyectos personales con estructura jerárquica
-(proyecto → tareas → subtareas de un nivel), pensado para no perder de vista
-lo que se está estancando. Ver `SPEC.md` para el spec original.
+App para ver y mover los pendientes personales de Casta: proyectos → tareas →
+subtareas (solo check). Los datos viven en **un solo archivo en Google Drive**,
+así Claude los puede leer y editar desde el proyecto "Pendientes" y la app solo
+los muestra. Ver `SPEC.md` para el spec original.
 
 ## Stack
 
-- React + Vite + Tailwind
-- Supabase (Postgres + cliente JS)
-- Pensado para desplegarse en Vercel
+- React + Vite + Tailwind, PWA instalable (pensada para el Galaxy Z Fold).
+- Google Drive como almacenamiento: `Pendientes Casta/pendientes.json`.
+- Inicio de sesión con Google (solo Client ID público). Sin backend, sin secretos.
+- Deploy en Vercel.
 
-## Poner a correr el proyecto
+## Datos en Drive
 
-### 1. Instalar dependencias
+```
+Pendientes Casta/
+  pendientes.json          ← el archivo vigente
+  respaldo/
+    pendientes-AAAA-MM-DD.json
+```
+
+Estructura de `pendientes.json` documentada en `src/lib/datos.js`. Campos clave:
+
+- `version`: sube en 1 con cada escritura (de la app o de Claude).
+- `updated_at` / `updated_by`: quién cambió por última vez.
+- `tasks[].last_moved_at`: se actualiza al cambiar de estado; alimenta el "oxidado".
+
+### Cómo escriben la app y Claude sin pisarse
+
+- **App**: antes de guardar vuelve a leer el archivo vigente y reaplica el cambio
+  sobre esa versión, luego escribe `version + 1`. El primer guardado del día
+  copia el archivo a `respaldo/`.
+- **Claude** (conector de Drive): no puede sobrescribir el contenido de un
+  archivo, así que crea un `pendientes.json` nuevo con `version + 1` y mueve el
+  anterior a `respaldo/` con nombre fechado. Si llegaran a convivir dos
+  `pendientes.json`, la app usa el modificado más reciente.
+
+## Poner a correr
 
 ```bash
 npm install
-```
-
-### 2. Crear el proyecto de Supabase
-
-1. Crea un proyecto gratuito en [supabase.com](https://supabase.com).
-2. Abre el **SQL Editor** y ejecuta el contenido de `supabase/schema.sql`.
-   Esto crea las tablas `projects` y `tasks`, el trigger que actualiza
-   `last_moved_at` cuando cambia el status de una tarea (la base del efecto
-   "oxidado"), y políticas RLS abiertas pensadas para un solo usuario con un
-   link privado.
-3. En **Project Settings → API**, copia la `Project URL` y la `anon public
-   key`.
-
-### 3. Variables de entorno
-
-```bash
-cp .env.example .env
-```
-
-Completa `.env` con la URL y la anon key del paso anterior.
-
-### 4. Correr en local
-
-```bash
 npm run dev
 ```
 
+Por defecto usa el Client ID de OAuth de la app de finanzas (`src/lib/config.js`);
+se puede cambiar con `VITE_GOOGLE_CLIENT_ID`.
+
+### Google Cloud (una sola vez)
+
+En el proyecto de Google Cloud del Client ID:
+
+1. **Credenciales → Client ID → Orígenes de JavaScript autorizados**: agregar el
+   dominio de Vercel de esta app (y `http://localhost:5173` para desarrollo).
+2. La app pide el scope `drive` completo (necesario para editar un archivo que
+   creó Claude). Como la app está en modo de prueba, Google muestra el aviso de
+   "app no verificada": es esperado, continuar.
+
 ## Deploy en Vercel
 
-1. Sube este repo a GitHub (ya lo está) y conéctalo en [vercel.com](https://vercel.com).
-2. Framework preset: **Vite**.
-3. Agrega las variables de entorno `VITE_SUPABASE_URL` y
-   `VITE_SUPABASE_ANON_KEY` en la configuración del proyecto en Vercel
-   (Settings → Environment Variables).
-4. Deploy. El link que te da Vercel es el que abres desde el celular.
-
-## Estructura
-
-```
-src/
-  lib/supabaseClient.js      # cliente de Supabase
-  hooks/                     # useProjects, useProject, useProjectTasks
-  utils/oxidado.js           # lógica del efecto "oxidado"
-  components/                # ProjectCard, KanbanBoard, TaskCard, modales…
-  pages/Dashboard.jsx        # tarjetas de proyectos con % avance
-  pages/ProjectView.jsx      # mini-kanban del proyecto
-supabase/schema.sql          # esquema + trigger + RLS
-```
+Framework preset **Vite**. No requiere variables de entorno.
 
 ## Efecto "oxidado"
 
-`src/utils/oxidado.js` calcula, a partir de `last_moved_at`, cuántos días
-lleva una tarea sin cambiar de status:
-
-| Días sin moverse | Color   |
+| Días sin moverse | Color |
 |---|---|
-| 0-3   | normal |
-| 4-7   | amarillo tenue |
-| 8-14  | naranja |
-| 15+   | rojo |
+| 0-3 | normal |
+| 4-7 | amarillo |
+| 8-14 | naranja |
+| 15+ | rojo |
 
-`last_moved_at` se actualiza solo vía trigger de Postgres cada vez que
-cambia el `status` de una tarea — no hay que mantenerlo a mano desde el
-frontend. La tarjeta de cada proyecto en el dashboard hereda el peor nivel
-de oxidado entre sus tareas no terminadas.
+La tarjeta de cada proyecto hereda el peor nivel entre sus tareas no terminadas.
 
 ## Trocear tareas grandes
 
-Al crear una tarea puedes marcarla como "es grande"; al guardarla se abre
-un modal para partirla en subtareas ahí mismo (una por línea). También
-puedes agregar subtareas a cualquier tarea existente desde su tarjeta en el
-kanban.
-
-## Qué falta para producción real (fuera del MVP)
-
-- Auth real por usuario (hoy las políticas RLS son abiertas, pensadas para
-  un link privado de un solo usuario — endurecer antes de compartir el link).
-- Fase 2 del spec: recordatorio semanal, captura rápida por voz/texto,
-  filtro de prioridad global entre proyectos, reportes de avance.
+Al crear una tarea puedes marcarla como "es grande" y partirla en subtareas
+ahí mismo (una por línea).

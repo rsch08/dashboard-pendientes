@@ -1,3 +1,4 @@
+import { porPrioridad } from '../lib/datos.js'
 import TaskCard from './TaskCard.jsx'
 
 const COLUMNAS = [
@@ -6,14 +7,8 @@ const COLUMNAS = [
   { key: 'hecho', label: 'Hecho' },
 ]
 
-export default function KanbanBoard({ tasks, onUpdateStatus, onDelete, onAddSubtask }) {
-  const principales = tasks.filter((t) => !t.parent_task_id)
-  const subtareasPorPadre = tasks.reduce((acc, t) => {
-    if (!t.parent_task_id) return acc
-    if (!acc[t.parent_task_id]) acc[t.parent_task_id] = []
-    acc[t.parent_task_id].push(t)
-    return acc
-  }, {})
+export default function KanbanBoard({ tasks, ...acciones }) {
+  const principales = [...tasks].sort(porPrioridad)
 
   return (
     <div className="grid gap-4 sm:grid-cols-3">
@@ -30,10 +25,7 @@ export default function KanbanBoard({ tasks, onUpdateStatus, onDelete, onAddSubt
                 <TaskCard
                   key={task.id}
                   task={task}
-                  subtasks={subtareasPorPadre[task.id] ?? []}
-                  onUpdateStatus={onUpdateStatus}
-                  onDelete={onDelete}
-                  onAddSubtask={onAddSubtask}
+                  {...acciones}
                 />
               ))}
               {tareasColumna.length === 0 && (
