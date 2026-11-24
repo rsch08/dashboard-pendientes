@@ -1,6 +1,8 @@
 // Efecto "oxidado": entre más tiempo sin moverse una tarea/proyecto,
 // más "oxidado" se ve, para que lo estancado salte a la vista.
 
+import { estadoTarea } from '../lib/datos.js'
+
 export function diasDesde(fechaISO) {
   const entonces = new Date(fechaISO).getTime()
   const ahora = Date.now()
@@ -22,28 +24,26 @@ const CLASES_POR_NIVEL = {
   rojo: 'bg-red-50 border-red-400',
 }
 
-const ETIQUETA_POR_NIVEL = {
-  normal: null,
-  amarillo: 'Sin moverse hace días',
-  naranja: 'Estancada',
-  rojo: 'Muy estancada',
-}
 
 export function claseOxidado(fechaISO) {
   return CLASES_POR_NIVEL[nivelOxidado(fechaISO)]
 }
 
+// "9 días sin moverse" (null si todavía está fresca).
 export function etiquetaOxidado(fechaISO) {
-  return ETIQUETA_POR_NIVEL[nivelOxidado(fechaISO)]
+  if (nivelOxidado(fechaISO) === 'normal') return null
+  return `${diasDesde(fechaISO)} días sin moverse`
 }
 
 // Para un proyecto: el nivel más "oxidado" entre sus tareas no terminadas.
 export function nivelOxidadoProyecto(tareas) {
   const ORDEN = ['normal', 'amarillo', 'naranja', 'rojo']
-  const activas = tareas.filter((t) => t.status !== 'hecho')
+  const activas = tareas.filter((t) => estadoTarea(t) !== 'hecho')
   if (activas.length === 0) return 'normal'
   return activas.reduce((peor, t) => {
     const actual = nivelOxidado(t.last_moved_at)
     return ORDEN.indexOf(actual) > ORDEN.indexOf(peor) ? actual : peor
   }, 'normal')
 }
+
+export const claseNivel = (nivel) => CLASES_POR_NIVEL[nivel]

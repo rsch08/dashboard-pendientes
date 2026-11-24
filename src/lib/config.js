@@ -14,4 +14,4 @@ export const GOOGLE_SCOPES = 'https://www.googleapis.com/auth/drive'
 export const CARPETA_RAIZ = 'Pendientes Casta'
 export const CARPETA_RESPALDO = 'respaldo'
 export const ARCHIVO_DATOS = 'pendientes.json'
-export const VERSION_ESQUEMA = 1
+export const VERSION_ESQUEMA = 2
