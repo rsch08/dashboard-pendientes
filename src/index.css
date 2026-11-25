@@ -5,3 +5,45 @@
 body {
   @apply bg-slate-100 text-slate-900;
 }
+
+/* Tachado animado: una línea que se dibuja de izquierda a derecha. */
+.tachable {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-repeat: no-repeat;
+  background-position: 0 55%;
+  background-size: 0 1.5px;
+  transition: background-size 0.4s ease, color 0.4s ease;
+}
+.tachado {
+  background-size: 100% 1.5px;
+}
+
+/* La casilla "salta" al marcarla. */
+input[type='checkbox']:checked {
+  animation: pop 0.25s ease-out;
+}
+@keyframes pop {
+  50% {
+    transform: scale(1.35);
+  }
+}
+
+/* Proyecto terminado que baja a "Terminados". */
+.animate-salir {
+  animation: salir 0.65s ease-in forwards;
+}
+@keyframes salir {
+  to {
+    opacity: 0;
+    transform: translateY(40px) scale(0.96);
+  }
+}
+.animate-aparecer {
+  animation: aparecer 0.4s ease-out;
+}
+@keyframes aparecer {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}

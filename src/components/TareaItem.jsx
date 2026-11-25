@@ -57,7 +57,7 @@ export default function TareaItem({ projectId, task, esSiguiente, abierta, onAlt
           />
         )}
         <button onClick={onAlternar} className="flex-1 min-w-0 text-left">
-          <span className={`text-sm font-medium ${hecha ? 'line-through text-slate-400' : 'text-slate-800'}`}>
+          <span className={`text-sm font-medium tachable ${hecha ? 'tachado text-slate-400' : 'text-slate-800'}`}>
             {task.title}
           </span>
           {task.sugerida && (
@@ -101,7 +101,7 @@ export default function TareaItem({ projectId, task, esSiguiente, abierta, onAlt
                     onChange={() => accion(ops.alternarSubtarea(projectId, task.id, s.id))}
                     className="mt-0.5 w-4 h-4 accent-emerald-600 shrink-0"
                   />
-                  <span className={`flex-1 text-sm ${s.done ? 'line-through text-slate-400' : 'text-slate-700'}`}>
+                  <span className={`flex-1 text-sm tachable ${s.done ? 'tachado text-slate-400' : 'text-slate-700'}`}>
                     {s.title}
                     {s.sugerida && (
                       <Sugerida

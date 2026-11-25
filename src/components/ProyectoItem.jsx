@@ -1,10 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
-import { avanceProyecto, ops, siguienteSubtarea, siguienteTarea } from '../lib/datos.js'
+import { avanceProyecto, ops, proyectoTerminado, siguienteSubtarea, siguienteTarea } from '../lib/datos.js'
 import { avisosProyecto } from '../utils/fechas.js'
 import Aviso, { Barra } from './Aviso.jsx'
 import TareaItem from './TareaItem.jsx'
 
-export default function ProyectoItem({ project, abierto, tareaInicial, onAlternar, puedeEditar, accion }) {
+export default function ProyectoItem({
+  project,
+  abierto,
+  tareaInicial,
+  onAlternar,
+  retenido,
+  saliendo,
+  puedeEditar,
+  accion,
+}) {
   const ref = useRef(null)
   const [nuevaTarea, setNuevaTarea] = useState('')
   const [tareaAbierta, setTareaAbierta] = useState(tareaInicial)
@@ -15,6 +24,16 @@ export default function ProyectoItem({ project, abierto, tareaInicial, onAlterna
   useEffect(() => {
     if (tareaInicial) setTareaAbierta(tareaInicial)
   }, [tareaInicial])
+
+  // Recién terminado: se cierra (y baja a Terminados) al tocar fuera de él.
+  useEffect(() => {
+    if (!retenido) return
+    const fuera = (e) => {
+      if (!ref.current?.contains(e.target)) onAlternar()
+    }
+    document.addEventListener('pointerdown', fuera)
+    return () => document.removeEventListener('pointerdown', fuera)
+  }, [retenido, onAlternar])
 
   // Si llegó desde el tablero, lo trae a la vista.
   useEffect(() => {
@@ -33,11 +52,21 @@ export default function ProyectoItem({ project, abierto, tareaInicial, onAlterna
   }
 
   return (
-    <div ref={ref} className="rounded-xl border border-slate-200 bg-white shadow-sm">
+    <div
+      ref={ref}
+      className={`rounded-xl border shadow-sm transition-colors duration-500 ${
+        retenido || saliendo ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 bg-white'
+      } ${saliendo ? 'animate-salir' : ''}`}
+    >
       <button onClick={onAlternar} className="w-full text-left p-3 flex items-start gap-3">
         <span className="w-3 h-3 mt-1.5 rounded-full shrink-0" style={{ backgroundColor: project.color }} />
         <span className="flex-1 min-w-0">
-          <span className="block font-semibold text-slate-800">{project.name}</span>
+          <span className="block font-semibold text-slate-800">
+            {project.name}
+            {proyectoTerminado(project) && (retenido || saliendo) && (
+              <span className="ml-2 text-xs font-medium text-emerald-700 animate-aparecer inline-block">✓ ¡Terminado!</span>
+            )}
+          </span>
           {sig && (
             <span className="block text-sm text-slate-600 mt-0.5">
               → {sig.title}
