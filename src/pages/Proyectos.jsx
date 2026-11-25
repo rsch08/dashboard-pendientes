@@ -9,13 +9,12 @@ import NewProjectModal from '../components/NewProjectModal.jsx'
 // próximo arriba; sin fecha, lo más estancado arriba). Al tocar un proyecto se
 // expande con sus tareas; al tocar una tarea, con sus subtareas.
 export default function Proyectos() {
-  const { datos, estado, mutar } = usePendientes()
+  const { datos, estado, mutar, puedeEditar } = usePendientes()
   const [params, setParams] = useSearchParams()
   const [showModal, setShowModal] = useState(false)
   const [verTerminados, setVerTerminados] = useState(false)
   const abierto = params.get('p')
   const tareaAbierta = params.get('t')
-  const puedeEditar = estado === 'listo' || estado === 'guardando'
 
   const todos = [...(datos?.projects ?? [])].sort(ordenProyectos)
   const activos = todos.filter((p) => !proyectoTerminado(p))

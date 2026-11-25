@@ -27,7 +27,7 @@ export default function BarraSync() {
       }`}
     >
       <span className="truncate flex-1">
-        {error ?? (desconectado ? 'Sin conexión con Drive: solo lectura' : TEXTO[estado])}
+        {error ?? (desconectado ? 'Drive en pausa: se reconecta solo al marcar algo' : TEXTO[estado])}
         {datos?.updated_at && !error && (
           <span className="text-slate-400">
             {' '}
