@@ -2,7 +2,9 @@
 // la app de finanzas. Sin backend no hay refresh token: el access token dura
 // ~1 hora y se guarda en localStorage con su vencimiento. Después hace falta
 // un toque para pedir otro (el navegador bloquea la ventana si no viene de un
-// gesto del usuario).
+// gesto del usuario). Por eso la app pide el token nuevo justo cuando Casta
+// marca o edita algo: la ventana de Google se abre y se cierra sola, sin
+// preguntar, porque el permiso ya estaba dado.
 
 import { GOOGLE_CLIENT_ID, GOOGLE_SCOPES } from './config.js'
 
@@ -11,7 +13,7 @@ const MARGEN_MS = 60_000
 
 let scriptPromesa
 
-function cargarScript() {
+export function cargarScript() {
   scriptPromesa ??= new Promise((resolve, reject) => {
     if (window.google?.accounts?.oauth2) return resolve()
     const s = document.createElement('script')

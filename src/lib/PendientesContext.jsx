@@ -3,7 +3,7 @@
 // mostrar los pendientes al instante (y sin conexión) aunque no haya token.
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
-import { obtenerToken, olvidarToken, tokenGuardado } from './auth.js'
+import { cargarScript, obtenerToken, olvidarToken, tokenGuardado } from './auth.js'
 import { ErrorDrive, escribirJson, leerJson, respaldarSiHaceFalta, ubicarDatos } from './drive.js'
 import { normalizar } from './datos.js'
 
@@ -45,7 +45,7 @@ export function PendientesProvider({ children }) {
     if (e instanceof ErrorDrive && e.estado === 401) {
       olvidarToken()
       setEstado('desconectado')
-      setError('La sesión de Google venció. Toca "Conectar" para seguir.')
+      setError(null)
     } else {
       setEstado('error')
       setError(e.message)
@@ -73,6 +73,8 @@ export function PendientesProvider({ children }) {
   )
 
   useEffect(() => {
+    // Precarga el script de Google para que renovar el token tras un toque sea inmediato.
+    cargarScript().catch(() => {})
     sincronizar()
     // Al volver a la app (p. ej. después de hablar con Claude), recarga.
     const alVolver = () => document.visibilityState === 'visible' && sincronizar()
@@ -86,10 +88,15 @@ export function PendientesProvider({ children }) {
   const mutar = useCallback(
     (op) => {
       setDatos((d) => (d ? op(d) : d))
+      // Si el token venció, se pide uno nuevo AQUÍ, todavía dentro del toque
+      // que disparó el cambio (si se pide después, el navegador bloquea la ventana).
+      const tokenNuevo = tokenGuardado() ? null : obtenerToken()
+      tokenNuevo?.catch(() => {})
       const tarea = cola.current.then(async () => {
         setEstado('guardando')
+        setError(null)
         try {
-          const token = tokenGuardado()
+          const token = tokenGuardado() ?? (tokenNuevo ? await tokenNuevo : null)
           if (!token) throw new ErrorDrive('Sin sesión', 401)
           const { raizId, archivo } = await ubicarDatos(token)
           const remoto = normalizar(await leerJson(token, archivo.id))
@@ -118,9 +125,11 @@ export function PendientesProvider({ children }) {
   )
 
   const conectar = useCallback(() => sincronizar({ interactivo: true }), [sincronizar])
+  // Se puede editar aunque el token haya vencido: al tocar se renueva solo.
+  const puedeEditar = !!datos && estado !== 'cargando'
 
   return (
-    <Ctx.Provider value={{ datos, estado, error, conectar, recargar: sincronizar, mutar }}>
+    <Ctx.Provider value={{ datos, estado, error, conectar, recargar: sincronizar, mutar, puedeEditar }}>
       {children}
     </Ctx.Provider>
   )
